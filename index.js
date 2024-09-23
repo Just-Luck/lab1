@@ -1,36 +1,39 @@
-const CROSS = 'X';
-const ZERO = 'O';
-const EMPTY = '';
+const SYMBOLS = {
+    CROSS: 'X',
+    ZERO: 'O',
+    EMPTY: ''
+}
 
 const container = document.getElementById('fieldWrapper');
 
+//*Объект для сохранения состояния игры
 let game = {
     winner: false,
     move: 0,
     field: [],
     size: 3,
-    reset: function(size = 3) {
+    reset: function(size = 3) {  //?Функция для возвращения игры в начальное состояние
         this.winner = false;
         this.move = 0;
         this.size = size;
-        this.field = Array(size).fill().map(() => Array(size).fill(EMPTY));
+        this.field = Array(size).fill().map(() => Array(size).fill(SYMBOLS.EMPTY));
     },
-    expandField: function() {
-        this.field.unshift(Array(this.size).fill(EMPTY));
-        this.field.push(Array(this.size).fill(EMPTY));
+    expandField: function() { //?Функция для расширения поля
+        this.field.unshift(Array(this.size).fill(SYMBOLS.EMPTY));
+        this.field.push(Array(this.size).fill(SYMBOLS.EMPTY));
         this.field.forEach(row => {
-            row.unshift(EMPTY);
-            row.push(EMPTY);
+            row.unshift(SYMBOLS.EMPTY);
+            row.push(SYMBOLS.EMPTY);
         });
-
         this.size += 2; 
         renderGrid(this.size);
     }
 }
 
-startGame();
-addResetListener();
+startGame(); //*Запускаем игру
+addResetListener(); //*Начинаем отслеживать нажатие на кнопку
 
+//*Функция начала игры
 function startGame() {
     let dimension = parseInt(prompt("Введите размер поля (например, 3 для 3x3): ", "3"));
     if (isNaN(dimension) || dimension <= 1) dimension = 3; 
@@ -38,6 +41,7 @@ function startGame() {
     renderGrid(dimension);
 }
 
+//*Функция отрисовки поля
 function renderGrid(dimension) {
     container.innerHTML = '';
     for (let i = 0; i < dimension; i++) {
@@ -52,130 +56,136 @@ function renderGrid(dimension) {
     }
 }
 
+//*Функция для проверки состояния игры
 function checkBoard() {
     const { field, size } = game;
-
+    //?Проверяем столбцы & строки
     for (let i = 0; i < size; i++) {
-        if (field[i].every(cell => cell === field[i][0] && cell !== EMPTY)) {
+        if (field[i].every(cell => cell === field[i][0] && cell !== SYMBOLS.EMPTY)) {
             game.winner = field[i][0];
             highlightWinningCells(field[i].map((_, idx) => [i, idx]));
             return alertEndGame();
         }
-        if (field.every(row => row[i] === field[0][i] && row[i] !== EMPTY)) {
+        if (field.every(row => row[i] === field[0][i] && row[i] !== SYMBOLS.EMPTY)) {
             game.winner = field[0][i];
             highlightWinningCells(field.map((_, idx) => [idx, i]));
             return alertEndGame();
         }
     }
 
-    if (field.every((row, idx) => row[idx] === field[0][0] && row[idx] !== EMPTY)) {
+    //?Проверяем диагонали
+    if (field.every((row, idx) => row[idx] === field[0][0] && row[idx] !== SYMBOLS.EMPTY)) {
         game.winner = field[0][0];
         highlightWinningCells(field.map((_, idx) => [idx, idx]));
         return alertEndGame();
     }
-
-    if (field.every((row, idx) => row[size - 1 - idx] === field[0][size - 1] && row[size - 1 - idx] !== EMPTY)) {
+    if (field.every((row, idx) => row[size - 1 - idx] === field[0][size - 1] && row[size - 1 - idx] !== SYMBOLS.EMPTY)) {
         game.winner = field[0][size - 1];
         highlightWinningCells(field.map((_, idx) => [idx, size - 1 - idx]));
         return alertEndGame();
     }
 
+    //?Проверка на ничью (Не используется, после добавления функции расширения поля)
     if (game.move >= size * size) {
         game.winner = 'draw';
         return alertEndGame();
     }
 
-    if (game.move > (size * size) / 2) game.expandField();
+    //?Расширяем поле
+    if (game.move > (size * size) / 2) return game.expandField(); 
 }
 
+//*Функция уведомления о завершении игры
 function alertEndGame() {
     alert('Игра закончилась! ' + (game.winner === 'draw' ? 'Победила дружба' : 'Победил ' + game.winner) + '. Игра закончилась за ' + game.move + ' ходов.');
 }
 
+//*Функция для покраски клеток
 function highlightWinningCells(cells) {
     for (const [row, col] of cells) renderSymbolInCell(game.winner, row, col, 'red');
 }
 
+//*Функция для одиночной игры(Автоматическая установка O)
 function aiMove() {
     if (game.winner || game.move >= game.field.length * game.field.length) return; 
 
     const { field, size } = game;
 
+    //?Проверка строк на победу
     for (let i = 0; i < size; i++) {
         let row = field[i];
-        if (row.filter(cell => cell === ZERO).length === size - 1 && row.includes(EMPTY)) {
-            let col = row.indexOf(EMPTY);
+        if (row.filter(cell => cell === SYMBOLS.ZERO).length === size - 1 && row.includes(SYMBOLS.EMPTY)) {
+            let col = row.indexOf(SYMBOLS.EMPTY);
             return cellClickHandler(i, col);
         }
     }
 
+    //?Проверка столбцов на победу
     for (let i = 0; i < size; i++) {
         let column = field.map(row => row[i]);
-        if (column.filter(cell => cell === ZERO).length === size - 1 && column.includes(EMPTY)) {
-            let row = column.indexOf(EMPTY);
+        if (column.filter(cell => cell === SYMBOLS.ZERO).length === size - 1 && column.includes(SYMBOLS.EMPTY)) {
+            let row = column.indexOf(SYMBOLS.EMPTY);
             return cellClickHandler(row, i);
         }
     }
 
+     //?Проверка главной диагоналей на победу
     let mainDiagonal = field.map((row, idx) => row[idx]);
-    if (mainDiagonal.filter(cell => cell === ZERO).length === size - 1 && mainDiagonal.includes(EMPTY)) {
-        let idx = mainDiagonal.indexOf(EMPTY);
+    if (mainDiagonal.filter(cell => cell === SYMBOLS.ZERO).length === size - 1 && mainDiagonal.includes(SYMBOLS.EMPTY)) {
+        let idx = mainDiagonal.indexOf(SYMBOLS.EMPTY);
         return cellClickHandler(idx, idx);
     }
-
     let antiDiagonal = field.map((row, idx) => row[size - 1 - idx]);
-    if (antiDiagonal.filter(cell => cell === ZERO).length === size - 1 && antiDiagonal.includes(EMPTY)) {
-        let idx = antiDiagonal.indexOf(EMPTY);
+    if (antiDiagonal.filter(cell => cell === SYMBOLS.ZERO).length === size - 1 && antiDiagonal.includes(SYMBOLS.EMPTY)) {
+        let idx = antiDiagonal.indexOf(SYMBOLS.EMPTY);
         return cellClickHandler(idx, size - 1 - idx);
     }
 
+     //?Находим все свободные клетки
     let emptyCells = [];
     for (let i = 0; i < size; i++) {
         for (let j = 0; j < size; j++) {
-            if (field[i][j] === EMPTY) emptyCells.push([i, j]);
+            if (field[i][j] === SYMBOLS.EMPTY) emptyCells.push([i, j]);
         }
     }
 
-    if (emptyCells.length > 0) {
-        const randomIndex = Math.floor(Math.random() * emptyCells.length);
-        const [row, col] = emptyCells[randomIndex];
+    //?Выбираем случайную из предыдущего шага
+    if (SYMBOLS.EMPTYCells.length > 0) {
+        const randomIndex = Math.floor(Math.random() * SYMBOLS.EMPTYCells.length);
+        const [row, col] = SYMBOLS.EMPTYCells[randomIndex];
         cellClickHandler(row, col);
     }
 }
 
+//*Функция обработки события нажатия на клетку
 async function cellClickHandler(row, col) {
     if (game.move >= game.field.length * game.field.length) return alert('Игра закончилась!');
     if (game.winner) return alert('Игра закончилась! ' + (game.winner === 'draw' ? 'Победила дружба' : 'Победил ' + game.winner) + '. Игра закончилась за ' + game.move + ' ходов.');
-    if (game.field[row][col] != EMPTY) return alert('Самый умный? Занято!');
+    if (game.field[row][col] != SYMBOLS.EMPTY) return alert('Самый умный? Занято!');
     
-    symbol = ++game.move % 2 === 0 ? ZERO : CROSS;
+    symbol = ++game.move % 2 === 0 ? SYMBOLS.ZERO : SYMBOLS.CROSS;
     game.field[row][col] = symbol;
     renderSymbolInCell(symbol, row, col);
     checkBoard();
 
-    if (symbol === CROSS && !game.winner) aiMove();
+    if (symbol === SYMBOLS.CROSS && !game.winner) aiMove();
 }
 
+//*Функция отрисовки символа
 function renderSymbolInCell(symbol, row, col, color = '#333') {
     const targetCell = findCell(row, col);
     targetCell.textContent = symbol;
     targetCell.style.color = color;
 }
 
+//*Поиск элемента ячейки
 function findCell(row, col) {
     const targetRow = container.querySelectorAll('tr')[row];
     return targetRow.querySelectorAll('td')[col];
 }
 
+//*Функция обработки события нажатия на кнопку
 function addResetListener() {
     const resetButton = document.getElementById('reset');
-    resetButton.addEventListener('click', resetClickHandler);
-}
-
-function resetClickHandler() {
-    startGame();
-}
-
-function clickOnCell (row, col) {
-    findCell(row, col).click();
+    resetButton.addEventListener('click', startGame);
 }
