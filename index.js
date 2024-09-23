@@ -150,9 +150,9 @@ function aiMove() {
     }
 
     //?Выбираем случайную из предыдущего шага
-    if (SYMBOLS.EMPTYCells.length > 0) {
-        const randomIndex = Math.floor(Math.random() * SYMBOLS.EMPTYCells.length);
-        const [row, col] = SYMBOLS.EMPTYCells[randomIndex];
+    if (emptyCells.length > 0) {
+        const randomIndex = Math.floor(Math.random() * emptyCells.length);
+        const [row, col] = emptyCells[randomIndex];
         cellClickHandler(row, col);
     }
 }
